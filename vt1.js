@@ -134,10 +134,24 @@ function lisaaSarja(sarjat, nimi, kesto, alkuaika, loppuaika) {
   * @param {Object} joukkueet - taulukko josta joukkue poistetaan
   * @param {String} id - poistettavan joukkueen id
   * @return {Boolean} true, jos poisto onnistui tai false, jos poistettavaa joukkuetta ei löytynyt
+  * @var {Number} poistettavaIndeksi - sen joukkue-alkion indeksi, joka halutaan poistaa
+  * @var {Function} tarkistaId - Itsetehty funktio, joka vertaa haluttua ID:tä datasta löytyvien joukkueiden ID:eihin.
+  * Tämä syötetään parametrinä findIndex-funktiolle, joka hoitaa varsinaisen datan läpikäynnin
   */
 function poistaJoukkue(joukkueet, id) {
-//  console.log("poistaJoukkue", joukkueet);
-  return false;
+  let poistettavaIndeksi = joukkueet.findIndex(tarkistaId);
+
+  function tarkistaId(value) {
+    if (value == id) {
+      return true;
+    }
+  }
+  if (poistettavaindeksi == -1) {
+    return false;
+  }
+  joukkueet.splice(poistettavaIndeksi, 1);
+  console.log("poistaJoukkue", joukkueet);
+  return true;
 }
 
 /**
