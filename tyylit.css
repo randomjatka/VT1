@@ -1,0 +1,9 @@
+#vt1>div>div>div:first-child {
+    border: 1px solid black;
+    margin: 1em;
+
+    display: inline;
+    float: left;
+    width: 38%;
+    overflow: auto;
+}
