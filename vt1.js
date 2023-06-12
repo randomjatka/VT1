@@ -50,9 +50,8 @@ function jarjestaSarjat(sarjat) {
     return 0;
   }
   snimet.sort(nimicompare);
-  return snimet;
   console.log("jarjestaSarjat", sarjat);
-  return sarjat;  // tässä pitää palauttaa järjestetty kopio eikä alkuperäistä
+  return snimet; // tässä pitää palauttaa järjestetty kopio eikä alkuperäistä
 }
 
 
@@ -146,7 +145,7 @@ function poistaJoukkue(joukkueet, id) {
       return true;
     }
   }
-  if (poistettavaindeksi == -1) {
+  if (poistettavaIndeksi == -1) {
     return false;
   }
   joukkueet.splice(poistettavaIndeksi, 1);
