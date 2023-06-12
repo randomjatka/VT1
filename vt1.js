@@ -13,12 +13,15 @@
   * Leimaustavan nimen alussa tai lopussa olevalle whitespacella ei myöskääm ole merkitystä. "  foo " on siis sama kuin "foo"
   * Alkuperäistä rakennetta ei saa muuttaa tai korvata vaan järjestäminen tehdään alkup. taulukon kopiolle.
   * Järjestetty lista leimaustavoista näkyy sivulla olevalla lomakkeella
-  * @param {Array} leimaustavat-taulukko, jonka kopio järjestetään 
+  * @param {Array} leimaustavat-taulukko, jonka kopio järjestetään
+  * @param {Array} lt-kopio alkuperäisestä leimaustavat - taulukosta
   * @return {Array} palauttaa järjestetyn _kopion_ leimaustavat-taulukosta
 */
 function jarjestaLeimaustavat(leimaustavat) {
-//  console.log("jarjestaLeimaustavat", leimaustavat);
-  return leimaustavat; // tässä pitää palauttaa järjestetty kopio eikä alkuperäistä
+  let lt = Array.from(leimaustavat);
+  lt.sort();
+  console.log("jarjestaLeimaustavat", leimaustavat);
+  return lt; // tässä pitää palauttaa järjestetty kopio eikä alkuperäistä
 }
 
 /**
