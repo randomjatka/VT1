@@ -75,16 +75,57 @@ function jarjestaSarjat(sarjat) {
   *     "loppuaika": {String}, // Sarjan loppuaika, oletuksena ""
   *  }
   * Tätä funktiota voi kokeilla, kun lisää sivulla olevalla lomakkeella uuden sarjan
+  * 
+  * Omat kommentit:
+  * Alussa verrataan syötettyä nimea jo sarjat - taulukon olemassa oleviin nimiin, sekä tarkistetaan ettei syötetty ollut vain whitespacea
+  * käyttämällä säännöllisiä lausekkeita. Samalla etsitään sarjan suurinta ID:tä, jota käytetään myöhemmin uuden ID:n muodostamiseen.
+  * Sitten tarkistetaan, että syötetty kesto on oikeasti numero ja suurempi kuin nolla. Sitten luodaan uudelle sarjalle uusi
+  * ID lisäämällä ykkönen entiseen suurimpaan ID lukuun. Sitten muodostetaan lisättävä sarja ja syötetään siihen kaikki tarvittavat tiedot
+  * 
   * @param {Array} sarjat - taulukko johon sarja lisätään 
   * @param {String} nimi - Lisättävän sarjan nimi
   * @param {String} kesto - Sarjan kesto merkkijonona
   * @param {String} alkuaika - Sarjan alkuaika, ei pakollinen
   * @param {String} loppuaika - Sarjan loppuaika, ei pakollinen
   * @return {Boolean} palauttaa true, jos sarja lisättiin tai false, jos lisäämistä ei tehty
+  * @var {Function} onkoTyhjaa - Itsetehty funktio, joka säännöllisten lausekkeiden avulla poistaa tyhjät tilat merkkijonosta ja tarkastaa,
+  * jäikö sen jälkeen merkkijonosta mitään jäljelle
+  * @var {Number} suurinId - Suurin taulukosta löydetyn sarjan ID
+  * @var {Number} uusiId - Lisätylle sarjalle tehty ID, joka saadaan lisäämällä ykkönen entiseen suurimpaan ID:hen
+  * @var {Object} uusiSarja - Uusi alkio sarjat-taulukkoon, joka muodostetaan syöttämällä parametrina annetut arvot sekä itse johdettu ID
   */
 function lisaaSarja(sarjat, nimi, kesto, alkuaika, loppuaika) {
-//  console.log("lisaaSarja", sarjat);
-  return false;
+  let suurinId = 0;
+  for (let sarja of sarjat) {
+    if ((sarja.nimi.localeCompare(nimi, 'fi', {sensitivity: 'base'}) == 0) || onkoTyhjaa(nimi)) {
+      return false;
+      }
+    if (sarja.id > suurinId) {
+      suurinId = sarja.id;
+    }
+    }
+  function onkoTyhjaa(value) {
+    if (!value.replace(/\s/g, "")) {
+      return true;
+      }
+    }
+
+    if (!Number.isInteger(parseInt(kesto)) || kesto <= 0) {
+      return false;
+    }
+
+  let uusiId = suurinId +1;
+  let uusiSarja = {
+    "id": uusiId,
+    "nimi": nimi,
+    "kesto": parseInt(kesto),
+    "alkuaika": alkuaika,
+    "loppuaika": loppuaika
+  };
+  let uusiData = sarjat.push(uusiSarja);
+
+  console.log("lisaaSarja", sarjat);
+  return true;
 }
 
 /**
