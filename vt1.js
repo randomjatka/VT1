@@ -31,10 +31,27 @@ function jarjestaLeimaustavat(leimaustavat) {
   * Alkuperäistä rakennetta ei saa muuttaa tai korvata vaan järjestäminen tehdään alkup. taulukon kopiolle.
   * Järjestetetyt sarjat näkyvät sivulla olevalla lomakkeella
   * @param {Array} taulukko, jonka kopio järjestetään 
+  * @var {Array} snimet - kopio alkuperäisestä taulukosta
+  * @var {Function} nimicompare - itsetehty vertailufunktio, joka annetaan sort-funktiolle parametrinä
+  * että se tietää mihin järjestykseen nimet laitetaan
   * @return {Array} palauttaa järjestetyn _kopion_ sarjat-taulukosta
   */
 function jarjestaSarjat(sarjat) {
-//  console.log("jarjestaSarjat", sarjat);
+  let snimet = Array.from(sarjat);
+
+  function nimicompare(a, b) {
+    if (a.nimi < b.nimi) {
+      return -1;
+    }
+    if (a.nimi > b.nimi) {
+      return 1;
+    }
+    // viimeiseksi jos yhtäsuuret
+    return 0;
+  }
+  snimet.sort(nimicompare);
+  return snimet;
+  console.log("jarjestaSarjat", sarjat);
   return sarjat;  // tässä pitää palauttaa järjestetty kopio eikä alkuperäistä
 }
 
