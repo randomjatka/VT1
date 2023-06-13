@@ -138,13 +138,14 @@ function lisaaSarja(sarjat, nimi, kesto, alkuaika, loppuaika) {
   * Tämä syötetään parametrinä findIndex-funktiolle, joka hoitaa varsinaisen datan läpikäynnin
   */
 function poistaJoukkue(joukkueet, id) {
-  let poistettavaIndeksi = joukkueet.findIndex(tarkistaId);
 
   function tarkistaId(value) {
-    if (value == id) {
+    if (value.parseInt == id.parseInt) {
       return true;
     }
   }
+  let poistettavaIndeksi = joukkueet.findIndex(tarkistaId);
+
   if (poistettavaIndeksi == -1) {
     return false;
   }

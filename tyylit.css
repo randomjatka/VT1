@@ -1,9 +1,73 @@
-#vt1>div>div>div:first-child {
-    border: 1px solid black;
-    margin: 1em;
+#vt1>div {
+    display: inline;
+}
 
+caption {
+    font-weight: bold;
+    font-size: 1.5em;
+    text-align: left;
+}
+
+table {
     display: inline;
     float: left;
-    width: 38%;
     overflow: auto;
+    
+    border-collapse: collapse;
+    border: 1px solid black;
+    margin-left: 1em;
+    margin-right: 1em;
+    padding-top: 1em;
+    width: 40%;
+    
+    padding-left: 2em;
+}
+
+fieldset {
+    border: none;
+}
+
+fieldset>label {
+    display:block;
+}
+
+#vt1>div>div:nth-child(2) {
+    display: inline;
+    float: left;
+    overflow: auto;
+    
+    border: 1px solid black;
+    width: 25%;
+}
+
+#vt1>div>div:nth-child(3) {
+    display: inline;
+    float: left;
+    overflow: auto;
+    
+    
+    border: 1px solid black;
+    width: 25%;
+    margin-left: 1em;
+}
+
+div>form:nth-child(1) {
+    display: table-footer-group;
+}
+
+div>form:nth-child(2) {
+    display: table-header-group;
+}
+
+th {
+    border: 1px dotted black;
+}
+
+
+td {
+    border: 1px dotted black;
+}
+
+h2, h3 {
+    margin-left: 1em;
 }
