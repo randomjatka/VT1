@@ -163,6 +163,15 @@ function poistaJoukkue(joukkueet, id) {
   * Jos saat konsoliin virheilmoituksen:
   *   Warning: Each child in a list should have a unique "key" prop.
   * et ole vielä asettanut rasteille oikeaa id:tä
+  * 
+  * Omat kommentit:
+  * Ensin puretaan rastit-objektin id ja sisältö auki, jotta ne voi muodostaa taulukoksi. Käytetään tähän keys ja values
+  * funktioita. Käydään silmukassa läpi rastit-objektin jokainen alkio. Otetaan alkiosta ID, ja laitetaan sen jälkeen
+  * rastin arvot. Näin muodostetaan taulukko, jossa on rastit objektin data silti kaikki yhdessä.
+  * 
+  * Sitten erotetaan rastien alkioista numerolla alkavat ja kirjaimella alkavat. Erotus tehdään filter-funktiolla,
+  * jossa tarkastellaan koodi-alkioiden ensimmäistä merkkiä ja säännöllisellä lausekkeella katsotaan, onko se digit (numero vai ei).
+  * Muodostetut rastien puolikkaat järjestetään normaalisti. Sitten kirjaimella alkavien rastien perään liitetään numerolla alkavat.
   * @param {Object} rastit - Objekti, jonka sisältämistä rastiobjekteista muodostetaan järjestetty taulukko
   * @return {Array} palauttaa järjestetyn taulukon, joka sisältää kaikki rastiobjektit. Rastiobjektit ovat muotoa:
                                                      {
@@ -171,10 +180,43 @@ function poistaJoukkue(joukkueet, id) {
                                                         "lat": latitude liukulukuna
                                                         "lon": longitude liukulukuna
                                                      } 
-  */
+  */                                      
 function jarjestaRastit(rastit) {
+  let suodatettavat = Object.values(rastit);
+
+  //let idsuodatettavat = suodatettavat.map(function (currentValue, index, array){
+  //  return currentValue.id = [Object.keys(rastit)[index]];
+  //})
+
+  //for (let rasti of rastit) {
+  //  suodatettavat.concat(rasti.keys.concat(rasti.values));
+  //}
+
+
+  let numerollaAlkavat = suodatettavat.filter(function (currentValue, index, array) {
+    if ( currentValue.koodi && /\d/.test(currentValue.koodi[0])) return true;
+  })
+  let kirjaimellaAlkavat = suodatettavat.filter(function (currentValue, index, array) {
+    if ( currentValue.koodi && !/\d/.test(currentValue.koodi[0])) return true;
+  })
+
+  function koodicompare(a, b) {
+    if (a.koodi < b.koodi) {
+      return -1;
+    }
+    if (a.koodi > b.koodi) {
+      return 1;
+    }
+    return 0;
+  }
+
+  numerollaAlkavat.sort(koodicompare);
+  kirjaimellaAlkavat.sort(koodicompare);
+
+  let uudetRastit = kirjaimellaAlkavat.concat(numerollaAlkavat);
+  return uudetRastit;
 //  console.log("jarjestaRastit", rastit);
-  return [{"id":1, "koodi":"00", "lat": 0.0, "lon": 0.0}]; // tässä pitää palauttaa järjestetty taulukko rasteista
+// return [{"id":1, "koodi":"00", "lat": 0.0, "lon": 0.0}]; // tässä pitää palauttaa järjestetty taulukko rasteista
 }
 
 
