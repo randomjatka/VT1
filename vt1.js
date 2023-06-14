@@ -91,20 +91,16 @@ function jarjestaSarjat(sarjat) {
   */
 function lisaaSarja(sarjat, nimi, kesto, alkuaika, loppuaika) {
   let suurinId = 0;
+  let nimiValilyonnit = nimi.replace(/\s/g, "");
+  if (nimiValilyonnit == "") {return false;}
   for (let sarja of sarjat) {
-    if ((sarja.nimi.localeCompare(nimi, 'fi', {sensitivity: 'base'}) == 0) || onkoTyhjaa(nimi)) {
+    if ((sarja.nimi.localeCompare(nimiValilyonnit, 'fi', {sensitivity: 'base'}) == 0)) {
       return false;
       }
     if (sarja.id > suurinId) {
       suurinId = sarja.id;
     }
     }
-  function onkoTyhjaa(value) {
-    if (!value.replace(/\s/g, "")) {
-      return true;
-      }
-    }
-
     if (!Number.isInteger(parseInt(kesto)) || kesto <= 0) {
       return false;
     }
@@ -265,7 +261,37 @@ function jarjestaRastit(rastit) {
   * @return {Object} palauttaa aluperäisen datan
   */
 function lisaaJoukkue(data, nimi, leimaustavat, sarja, jasenet) {
-//  console.log("lisaaJoukkue", data);
+  let nimiValilyonnit = nimi.replace(/\s/g, "");
+  if (nimiValilyonnit == "") {return false;}
+  for (let joukkue of data.joukkueet) {
+    if ((joukkue.nimi.localeCompare(nimiValilyonnit, 'fi', {sensitivity: 'base'}) == 0)) {
+      return data;
+      }
+    }
+  if (leimaustavat.length < 1) { return data;}
+
+  for (let leimaustapa in leimaustavat) {
+    //TODO: vertausfunktio findIndexille
+    if (data.leimaustavat.findIndex() == -1) { return data;}
+  }
+
+  if (jasenet.length < 2) { return data;}
+
+  //Tällä kaksoissilmukalla verrataan jokaisen jäsenen nimeä kaikkiin jäsenet - taulukossa jälkeen tuleviin nimiin.
+  //Edellä oleviin nimiin ei tarvitse vertaa koska aikaisemmat iteraatiot jo hoitivat sen.
+  // TODO: parempi vertauslause, tarvitaan localeComparea
+  let indeksi = 0;
+  let indeksij = 0;
+  while (indeksi < jasenet.length-1) {
+    while ((indeksi + indeksij) < jasenet.length-1) {
+      if (jasenet[indeksi] == jasenet[indeksi + indeksij + 1]) {return data;}
+      indeksij++;
+    }
+    indeksij = 0;
+    indeksi++;
+  }
+
+  console.log("lisaaJoukkue", data);
   return data;
 }
 
