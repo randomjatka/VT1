@@ -19,7 +19,7 @@
 */
 function jarjestaLeimaustavat(leimaustavat) {
   let lt = Array.from(leimaustavat);
-  lt.sort();
+  lt.sort(Intl.Collator('fi', {sensitivity: 'base'}).compare);
   console.log("jarjestaLeimaustavat", leimaustavat);
   return lt; // tässä pitää palauttaa järjestetty kopio eikä alkuperäistä
 }
@@ -33,21 +33,17 @@ function jarjestaLeimaustavat(leimaustavat) {
   * @param {Array} taulukko, jonka kopio järjestetään 
   * @var {Array} snimet - kopio alkuperäisestä taulukosta
   * @var {Function} nimicompare - itsetehty vertailufunktio, joka annetaan sort-funktiolle parametrinä
-  * että se tietää mihin järjestykseen nimet laitetaan
+  * että sarjat voidaan järjestää nimen mukaan.
   * @return {Array} palauttaa järjestetyn _kopion_ sarjat-taulukosta
   */
 function jarjestaSarjat(sarjat) {
   let snimet = Array.from(sarjat);
 
   function nimicompare(a, b) {
-    if (a.nimi < b.nimi) {
-      return -1;
+    let tulos = a.nimi.localeCompare(b.nimi, 'fi', {sensitivity: 'base'});
+    if ( tulos) {
+      return tulos;
     }
-    if (a.nimi > b.nimi) {
-      return 1;
-    }
-    // viimeiseksi jos yhtäsuuret
-    return 0;
   }
   snimet.sort(nimicompare);
   console.log("jarjestaSarjat", sarjat);
@@ -121,7 +117,7 @@ function lisaaSarja(sarjat, nimi, kesto, alkuaika, loppuaika) {
     "alkuaika": alkuaika,
     "loppuaika": loppuaika
   };
-  let uusiData = sarjat.push(uusiSarja);
+  sarjat.push(uusiSarja);
 
   console.log("lisaaSarja", sarjat);
   return true;
@@ -138,12 +134,13 @@ function lisaaSarja(sarjat, nimi, kesto, alkuaika, loppuaika) {
   * Tämä syötetään parametrinä findIndex-funktiolle, joka hoitaa varsinaisen datan läpikäynnin
   */
 function poistaJoukkue(joukkueet, id) {
-
   function tarkistaId(value) {
-    if (value.parseInt == id.parseInt) {
+    if (parseInt(value.id) == parseInt(id)) {
       return true;
     }
+    return false;
   }
+
   let poistettavaIndeksi = joukkueet.findIndex(tarkistaId);
 
   if (poistettavaIndeksi == -1) {
@@ -165,9 +162,9 @@ function poistaJoukkue(joukkueet, id) {
   * et ole vielä asettanut rasteille oikeaa id:tä
   * 
   * Omat kommentit:
-  * Ensin puretaan rastit-objektin id ja sisältö auki, jotta ne voi muodostaa taulukoksi. Käytetään tähän keys ja values
-  * funktioita. Käydään silmukassa läpi rastit-objektin jokainen alkio. Otetaan alkiosta ID, ja laitetaan sen jälkeen
-  * rastin arvot. Näin muodostetaan taulukko, jossa on rastit objektin data silti kaikki yhdessä.
+  * Ensin luodaan uuden taulukon pohja ja indeksi, jonka avulla seurataan monettako taulukon alkiota käsitellään.
+  * Sitten täytetään silmukalla vanhan rastit - objektin avaimet ja arvot yhteen objektiin, ja luotu objekti
+  * lisätään uuteen taulukkoon joka iteraatiolla.
   * 
   * Sitten erotetaan rastien alkioista numerolla alkavat ja kirjaimella alkavat. Erotus tehdään filter-funktiolla,
   * jossa tarkastellaan koodi-alkioiden ensimmäistä merkkiä ja säännöllisellä lausekkeella katsotaan, onko se digit (numero vai ei).
@@ -179,43 +176,57 @@ function poistaJoukkue(joukkueet, id) {
                                                         "koodi": rastikoodi merkkijonona
                                                         "lat": latitude liukulukuna
                                                         "lon": longitude liukulukuna
-                                                     } 
-  */                                      
+                                                     }
+  * @var {Array} idsuodatettavat - Taulukko, johon pakataan rastit - objektin avaimet ja arvot
+  * @var {Number} indeksi - Apuluku, jota käytetään silmukan suorituksessa viittaamaan taulukon alkioihin
+  * @var {Object} suodatettava - Uusi objekti, joka toimii idsuodatettavat - taulukon sisältö alkioina
+  * @var {Array} numerollaAlkavat - Rastit, jotka alkavat numerolla
+  * @var {Array} kirjaimellaAlkavat - Rastit, jotka alkavat kirjaimella
+  * @var {Function} koodicompare - Apufunktio, joka vertaa rastien koodi-osioita keskenään
+  */                                   
 function jarjestaRastit(rastit) {
-  let suodatettavat = Object.values(rastit);
+  
+  let idsuodatettavat = [];
+  let indeksi = 0;
 
-  //let idsuodatettavat = suodatettavat.map(function (currentValue, index, array){
-  //  return currentValue.id = [Object.keys(rastit)[index]];
-  //})
+  for (let rasti in rastit) {
 
-  //for (let rasti of rastit) {
-  //  suodatettavat.concat(rasti.keys.concat(rasti.values));
-  //}
+    let suodatettava = {
+      "id": Object.keys(rastit)[indeksi],
+      "koodi": Object.values(rastit)[indeksi].koodi,
+      "lat": Object.values(rastit)[indeksi].lat,
+      "lon": Object.values(rastit)[indeksi].lon,
+    };
+    idsuodatettavat[indeksi] = suodatettava;
+    indeksi++;
+  }
 
+  let numerollaAlkavat = idsuodatettavat.filter(function (currentValue, index, array) {
+    if ( currentValue.koodi && /\d/.test(currentValue.koodi[0])) {
+      return true;
+    } 
+  });
 
-  let numerollaAlkavat = suodatettavat.filter(function (currentValue, index, array) {
-    if ( currentValue.koodi && /\d/.test(currentValue.koodi[0])) return true;
-  })
-  let kirjaimellaAlkavat = suodatettavat.filter(function (currentValue, index, array) {
-    if ( currentValue.koodi && !/\d/.test(currentValue.koodi[0])) return true;
-  })
+  let kirjaimellaAlkavat = idsuodatettavat.filter(function (currentValue, index, array) {
+    if ( currentValue.koodi && !/\d/.test(currentValue.koodi[0])) {
+      return true;
+    } 
+  });
+
 
   function koodicompare(a, b) {
-    if (a.koodi < b.koodi) {
-      return -1;
+    let tulos = a.koodi.localeCompare(b.koodi, 'fi', {sensitivity: 'base'});
+    if ( tulos) {
+      return tulos;
     }
-    if (a.koodi > b.koodi) {
-      return 1;
-    }
-    return 0;
   }
 
   numerollaAlkavat.sort(koodicompare);
   kirjaimellaAlkavat.sort(koodicompare);
 
-  let uudetRastit = kirjaimellaAlkavat.concat(numerollaAlkavat);
-  return uudetRastit;
-//  console.log("jarjestaRastit", rastit);
+  console.log("jarjestaRastit", kirjaimellaAlkavat.concat(numerollaAlkavat));
+  return kirjaimellaAlkavat.concat(numerollaAlkavat);
+
 // return [{"id":1, "koodi":"00", "lat": 0.0, "lon": 0.0}]; // tässä pitää palauttaa järjestetty taulukko rasteista
 }
 
