@@ -261,38 +261,85 @@ function jarjestaRastit(rastit) {
   * @return {Object} palauttaa aluperäisen datan
   */
 function lisaaJoukkue(data, nimi, leimaustavat, sarja, jasenet) {
+
+  // Lomake palauttaa myös tyhjän jäsenrivin joten poistetaan se
+  jasenet.splice(jasenet.indexOf(""), 1);
+
+  let suurinId = 0;
   let nimiValilyonnit = nimi.replace(/\s/g, "");
-  if (nimiValilyonnit == "") {return false;}
+  if (nimiValilyonnit == "") {return data;}
   for (let joukkue of data.joukkueet) {
+    // Jos löytyy joukkue, jonka nimi on sama kuin lisättävän joukkueen (vertaus == 0), niin ei lisätä joukkuetta
     if ((joukkue.nimi.localeCompare(nimiValilyonnit, 'fi', {sensitivity: 'base'}) == 0)) {
       return data;
+      }
+    if (joukkue.id > suurinId) {
+      suurinId = joukkue.id;
       }
     }
   if (leimaustavat.length < 1) { return data;}
 
-  for (let leimaustapa in leimaustavat) {
-    //TODO: vertausfunktio findIndexille
-    if (data.leimaustavat.findIndex() == -1) { return data;}
+  // Kaksi sisäkkäistä silmukkaa, joilla tarkistetaan että jokainen leimaustapa löytyy kertaalleen alkuperäisestä datasta
+  let onkoOlemassa = false;
+  let leimausIndeksit = [];
+  for (let leimaustapa of leimaustavat) {
+    for (let vertausleima of data.leimaustavat) {
+      if (leimaustapa == vertausleima) {
+        onkoOlemassa = true;
+        leimausIndeksit.push(data.leimaustavat.indexOf(leimaustapa));
+      }
+    }
+    // Jos leimaistapaa ei löydetä, palautetaan alkuperäinen data. Jos löytyi, katsotaan onko muutkin leimaustavat olemassa toistamalla ulkoinen
+    // silmukka
+    if (!onkoOlemassa) {return data;}
+    onkoOlemassa = false;
   }
 
   if (jasenet.length < 2) { return data;}
 
-  //Tällä kaksoissilmukalla verrataan jokaisen jäsenen nimeä kaikkiin jäsenet - taulukossa jälkeen tuleviin nimiin.
-  //Edellä oleviin nimiin ei tarvitse vertaa koska aikaisemmat iteraatiot jo hoitivat sen.
+  // Tällä kaksoissilmukalla verrataan jokaisen jäsenen nimeä kaikkiin jäsenet - taulukossa jälkeen tuleviin nimiin.
+  // Edellä oleviin nimiin ei tarvitse vertaa koska aikaisemmat iteraatiot jo hoitivat sen.
   // TODO: parempi vertauslause, tarvitaan localeComparea
   let indeksi = 0;
   let indeksij = 0;
   while (indeksi < jasenet.length-1) {
     while ((indeksi + indeksij) < jasenet.length-1) {
-      if (jasenet[indeksi] == jasenet[indeksi + indeksij + 1]) {return data;}
+      if (jasenet[indeksi].localeCompare(jasenet[indeksi + indeksij + 1], 'fi', {sensitivity: 'base'}) == 0) {return data;}
       indeksij++;
     }
     indeksij = 0;
     indeksi++;
   }
 
+  let onkoIdOlemassa = false;
+  let lisattavaSarja = {};
+  // Katsotaan, että sarjan ID löytyy datasta, muuten palautetaan alkuperäinen data
+  for (let vertausSarja of data.sarjat) {
+    if (sarja == vertausSarja.id) { 
+      onkoIdOlemassa = true;
+      lisattavaSarja = vertausSarja;
+    }
+  }
+  if (!onkoIdOlemassa) { return data;}
+
+  suurinId++;
+  let lisattavaJoukkue = {
+    "id": suurinId,
+    "nimi": nimi,
+    "jasenet": jasenet,
+    "leimaustapa": leimausIndeksit,
+    "rastileimaukset": leimaustavat,
+    "sarja": lisattavaSarja,
+    "pisteet": 0,
+    "matka": 0,
+    "aika": "00:00:00"
+  };
+
+  data.joukkueet.push(lisattavaJoukkue);
+  
   console.log("lisaaJoukkue", data);
   return data;
+  
 }
 
 /**
