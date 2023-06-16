@@ -253,23 +253,39 @@ function jarjestaRastit(rastit) {
   *     "matka": {Number}, // joukkueen kulkema matka, oletuksena 0
   *     "aika": {String}, // joukkueen käyttämä aika "h:min:s", oletuksena "00:00:00"
   *  }
+  * Omat kommentit: Ensin poistetaan lomakkeen antama tyhjä nimi. Sitten tarkistetaan, että annettu joukkueen nimi ei ole jo olemassa.
+  * Suurin löydetty joukkueen ID otetaan talteen, jotta sillä voi muodostaa uuden joukkueen ID:n.
+  * Sitten katsotaan, että jokainen leimaustapa on olemassa, ja tallennetaan niiden indeksit lisättävälle joukkueelle.
+  * Sitten katsotaan, että syötetyissä jäsenien nimissä ei ole duplikaatteja. Lopuksi vielä katsotaan, että sarjan ID on olemassa,
+  * ja lisätään sarja myös joukkueeseen. Sitten täytetään joukkueen tiedot ja lisätään se dataan.
+  * 
   * @param {Object} Objekti, jonka joukkueet-taulukkoon joukkue lisätään 
   * @param {String} nimi - Lisättävän joukkueen nimi
   * @param {Array} leimaustavat - Taulukko leimaustavoista
   * @param {String} sarja - Joukkueen sarjan id-tunniste
   * @param {Array} jasenet - joukkueen jäsenet
   * @return {Object} palauttaa aluperäisen datan
+  * 
+  * @var {Number} suurinId - Suurin joukkueet -taulukosta löydetty joukkueen ID
+  * @var {Boolean} onkoOlemassa - Apumuuttuja, jolla pidetään muistissa onko leimaustapa olemassa
+  * @var {Array} leimausIndeksit - Aputaulukko, jolla pidetään muistissa syötettyjen leimaustapojen indeksit
+  * @var {Boolean} onkoIdOlemassa - Apumuuttuja, jolla pidetään muistissa onko sarja olemassa
+  * @var {object} lisattavaSarja - Apumuuttuja, jolla pidetään muistissa se sarja, johon syötetty sarjan ID täsmäsi
+  * @var {object} lisattavaJoukkue - Joukkue, johon laitetaan syötetyt tiedot ja lisätään dataan
   */
 function lisaaJoukkue(data, nimi, leimaustavat, sarja, jasenet) {
 
   // Lomake palauttaa myös tyhjän jäsenrivin joten poistetaan se
   jasenet.splice(jasenet.indexOf(""), 1);
 
+  // Poistetaan joukkueen nimestä whitespace ja vertaillaan olemassa oleviin nimiin.
+  // Jos löytyy joukkue, jonka nimi on sama kuin lisättävän joukkueen (localcompare vertaus == 0), niin ei lisätä joukkuetta
+  // Lisäksi joukkeita käsitellessä katsotaan läpi niiden ID:t, ja tallennetaan suurin jonka avulla voidaan tehdä uuden joukkueen ID
+  if (leimaustavat.length < 1) { return data;}
   let suurinId = 0;
   let nimiValilyonnit = nimi.replace(/\s/g, "");
   if (nimiValilyonnit == "") {return data;}
   for (let joukkue of data.joukkueet) {
-    // Jos löytyy joukkue, jonka nimi on sama kuin lisättävän joukkueen (vertaus == 0), niin ei lisätä joukkuetta
     if ((joukkue.nimi.localeCompare(nimiValilyonnit, 'fi', {sensitivity: 'base'}) == 0)) {
       return data;
       }
@@ -277,9 +293,10 @@ function lisaaJoukkue(data, nimi, leimaustavat, sarja, jasenet) {
       suurinId = joukkue.id;
       }
     }
-  if (leimaustavat.length < 1) { return data;}
 
-  // Kaksi sisäkkäistä silmukkaa, joilla tarkistetaan että jokainen leimaustapa löytyy kertaalleen alkuperäisestä datasta
+  // Kaksi sisäkkäistä silmukkaa, joilla tarkistetaan että jokainen leimaustapa löytyy kertaalleen alkuperäisestä datasta.
+  // Kun yksi leimaustapa on löydetty, tallennetaan myös sen indeksi jonka avulla voidaan täyttää uuden joukkuueen "leimaustapa" alkio.
+  // Sitten siirrytään uuteen leimaustapaan ja etsitään sekin alkuperäisestä datasta. Jos jotain leimaustapaa ei löydy, ei lisätä joukkuetta
   let onkoOlemassa = false;
   let leimausIndeksit = [];
   for (let leimaustapa of leimaustavat) {
@@ -287,19 +304,16 @@ function lisaaJoukkue(data, nimi, leimaustavat, sarja, jasenet) {
       if (leimaustapa == vertausleima) {
         onkoOlemassa = true;
         leimausIndeksit.push(data.leimaustavat.indexOf(leimaustapa));
+        break;
       }
     }
-    // Jos leimaistapaa ei löydetä, palautetaan alkuperäinen data. Jos löytyi, katsotaan onko muutkin leimaustavat olemassa toistamalla ulkoinen
-    // silmukka
     if (!onkoOlemassa) {return data;}
     onkoOlemassa = false;
   }
 
+  // Kaksi sisäkkäistä silmukkaa, joilla verrataan jokaisen jäsenen nimeä kaikkiin jäsenet - taulukossa jälkeen tuleviin nimiin.
+  // Edellä oleviin nimiin ei tarvitse vertaa koska aikaisemmat iteraatiot jo hoitivat sen
   if (jasenet.length < 2) { return data;}
-
-  // Tällä kaksoissilmukalla verrataan jokaisen jäsenen nimeä kaikkiin jäsenet - taulukossa jälkeen tuleviin nimiin.
-  // Edellä oleviin nimiin ei tarvitse vertaa koska aikaisemmat iteraatiot jo hoitivat sen.
-  // TODO: parempi vertauslause, tarvitaan localeComparea
   let indeksi = 0;
   let indeksij = 0;
   while (indeksi < jasenet.length-1) {
@@ -311,9 +325,10 @@ function lisaaJoukkue(data, nimi, leimaustavat, sarja, jasenet) {
     indeksi++;
   }
 
+  // Katsotaan, että sarjan ID löytyy datasta, muuten palautetaan alkuperäinen data. Kun täsmäävä sarjan id löydetään, tallennetaan
+  // se jotta se voidaan täyttää uuden joukkueen sarjaksi
   let onkoIdOlemassa = false;
   let lisattavaSarja = {};
-  // Katsotaan, että sarjan ID löytyy datasta, muuten palautetaan alkuperäinen data
   for (let vertausSarja of data.sarjat) {
     if (sarja == vertausSarja.id) { 
       onkoIdOlemassa = true;
@@ -356,6 +371,41 @@ function lisaaJoukkue(data, nimi, leimaustavat, sarja, jasenet) {
   * @return {Object} joukkue
   */
 function laskeAika(joukkue) {
+  return joukkue;
+  function aikaJarjestysFunktio(a,b) {
+    return Date.parse(a.aika) > Date.parse(b.aika);
+  }
+  
+  function vertaaLahtoon(value) {
+    if (value.rasti === undefined) {return false;}
+    if (value.rasti.koodi == "LAHTO") {return true;}
+  }
+
+  function vertaaMaaliin(value) {
+    if (value.rasti === undefined) {return false;}
+    if (value.rasti.koodi == "MAALi") {return true;}
+  }
+
+  // TODO: Tässä luultavasti sort-funktio pilaa alkuperäisenkin datan, ja johtaa ikuiseen silmukkaan suorituksen aikana.
+  // tee tilalle funktio joka etsii manuaalisesti viimeisen lähdön ja ensimmäisen maalin
+  let lahtoLeimaukset = joukkue.rastileimaukset.filter(vertaaLahtoon);
+  let jarjestetytLahdot = lahtoLeimaukset.filter(aikaJarjestysFunktio);
+  if (jarjestetytLahdot.length-1 < 1) {return joukkue;}
+  let vikaLahto = jarjestetytLahdot[jarjestetytLahdot.length-1];
+
+  let maaliLeimaukset = joukkue.rastileimaukset.filter(vertaaMaaliin);
+  let jarjestetytMaalit = maaliLeimaukset.sort(aikaJarjestysFunktio);
+  if (jarjestetytMaalit.length-1 < 1) {return joukkue;}
+  let ekamaali = {};
+  for (let jarjestettyMaali in jarjestetytMaalit) {
+    if (Date.parse(vikaLahto.aika) < Date.parse(jarjestettyMaali.aika)) {
+      ekamaali = jarjestettyMaali;
+      break;
+    }
+  }
+
+  let joukkueenAika = Math.abs(Date.parse(ekamaali.aika) - Date.parse(vikaLahto.aika));
+  joukkue.aika = joukkueenAika;
   return joukkue;
 }
 
