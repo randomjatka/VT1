@@ -371,7 +371,6 @@ function lisaaJoukkue(data, nimi, leimaustavat, sarja, jasenet) {
   * @return {Object} joukkue
   */
 function laskeAika(joukkue) {
-  return joukkue;
   function aikaJarjestysFunktio(a,b) {
     return Date.parse(a.aika) > Date.parse(b.aika);
   }
@@ -383,29 +382,60 @@ function laskeAika(joukkue) {
 
   function vertaaMaaliin(value) {
     if (value.rasti === undefined) {return false;}
-    if (value.rasti.koodi == "MAALi") {return true;}
+    if (value.rasti.koodi == "MAALI") {return true;}
   }
 
   // TODO: Tässä luultavasti sort-funktio pilaa alkuperäisenkin datan, ja johtaa ikuiseen silmukkaan suorituksen aikana.
   // tee tilalle funktio joka etsii manuaalisesti viimeisen lähdön ja ensimmäisen maalin
   let lahtoLeimaukset = joukkue.rastileimaukset.filter(vertaaLahtoon);
-  let jarjestetytLahdot = lahtoLeimaukset.filter(aikaJarjestysFunktio);
-  if (jarjestetytLahdot.length-1 < 1) {return joukkue;}
-  let vikaLahto = jarjestetytLahdot[jarjestetytLahdot.length-1];
-
-  let maaliLeimaukset = joukkue.rastileimaukset.filter(vertaaMaaliin);
-  let jarjestetytMaalit = maaliLeimaukset.sort(aikaJarjestysFunktio);
-  if (jarjestetytMaalit.length-1 < 1) {return joukkue;}
-  let ekamaali = {};
-  for (let jarjestettyMaali in jarjestetytMaalit) {
-    if (Date.parse(vikaLahto.aika) < Date.parse(jarjestettyMaali.aika)) {
-      ekamaali = jarjestettyMaali;
-      break;
-    }
+  if (lahtoLeimaukset.length < 1) {return joukkue;}
+  let vikaLahto = new Date(Date.parse('01 Jan 1970 00:00:00 GMT'));
+  let indeksi = 0;
+  while (indeksi < lahtoLeimaukset.length) {
+    if (vikaLahto < Date.parse(lahtoLeimaukset[indeksi].aika)) {vikaLahto = Date.parse(lahtoLeimaukset[indeksi].aika);}
+    indeksi++;
   }
 
-  let joukkueenAika = Math.abs(Date.parse(ekamaali.aika) - Date.parse(vikaLahto.aika));
-  joukkue.aika = joukkueenAika;
+  //let jarjestetytLahdot = lahtoLeimaukset.filter(aikaJarjestysFunktio);
+  //if (jarjestetytLahdot.length-1 < 1) {return joukkue;}
+  //let vikaLahto = jarjestetytLahdot[jarjestetytLahdot.length-1];
+
+  let maaliLeimaukset = joukkue.rastileimaukset.filter(vertaaMaaliin);
+  if (maaliLeimaukset.length < 1) {return joukkue;}
+  let ekamaali = new Date(Date.parse(maaliLeimaukset[0].aika));
+
+
+  // TODO: katso että tarviiko erikseen tarkistaa, onko jokin maali ennen vikaalähtöä. luultavasti ei koska 
+  // jos ekamaali olisi ennen vikaalähtöä, niin laskutoimitus olisi negatiivinen
+  let loytyikoValidiaLeimaa = false;
+
+  let indeksij = 0;
+  while (indeksij < maaliLeimaukset.length) {
+    if (ekamaali > Date.parse(maaliLeimaukset[indeksij].aika)) {
+      if (Date.parse(vikaLahto) < Date.parse(maaliLeimaukset[indeksij].aika)) {
+        ekamaali = Date.parse(maaliLeimaukset[indeksij].aika);
+        loytyikoValidiaLeimaa = true;
+        }
+      }
+    indeksij++;
+  }
+
+  //if (!loytyikoValidiaLeimaa) {return joukkue;}
+
+  let joukkueenAika = Math.abs(ekamaali - vikaLahto);
+  function millisekuntitTunneiksi(kesto) {
+    let sekuntit = Math.floor(kesto / 1000) % 60;
+    let minuutit = Math.floor(kesto / (1000*60) % 60);
+    let tunnit = Math.floor(kesto / (1000*60*60) % 24);
+
+    tunnit = (tunnit < 10) ? "0" + tunnit : tunnit;
+    minuutit = (minuutit < 10) ? "0" + minuutit : minuutit;
+    sekuntit = (sekuntit < 10) ? "0" + sekuntit : sekuntit;
+
+    return tunnit + ":" + minuutit + ":" + sekuntit
+  }
+
+  joukkue.aika = millisekuntitTunneiksi(joukkueenAika);
   return joukkue;
 }
 
