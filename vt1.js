@@ -270,8 +270,8 @@ function jarjestaRastit(rastit) {
   * @var {Boolean} onkoOlemassa - Apumuuttuja, jolla pidetään muistissa onko leimaustapa olemassa
   * @var {Array} leimausIndeksit - Aputaulukko, jolla pidetään muistissa syötettyjen leimaustapojen indeksit
   * @var {Boolean} onkoIdOlemassa - Apumuuttuja, jolla pidetään muistissa onko sarja olemassa
-  * @var {object} lisattavaSarja - Apumuuttuja, jolla pidetään muistissa se sarja, johon syötetty sarjan ID täsmäsi
-  * @var {object} lisattavaJoukkue - Joukkue, johon laitetaan syötetyt tiedot ja lisätään dataan
+  * @var {Object} lisattavaSarja - Apumuuttuja, jolla pidetään muistissa se sarja, johon syötetty sarjan ID täsmäsi
+  * @var {Object} lisattavaJoukkue - Joukkue, johon laitetaan syötetyt tiedot ja lisätään dataan
   */
 function lisaaJoukkue(data, nimi, leimaustavat, sarja, jasenet) {
 
@@ -367,14 +367,28 @@ function lisaaJoukkue(data, nimi, leimaustavat, sarja, jasenet) {
   * ennen viimeistä lähtöleimausta tai ensimmäisen maalileimauksen jälkeen ei huomioida.
   * Mahdollisia MAALI-rastin leimauksia, jotka tehdään ennen viimeistä LAHTO-rastilla leimausta, ei huomioida
   * Ts. LAHTO-rastin leimaaminen nollaa aina kaikki leimaukset mukaanlukien mahdollisen MAALI-rastileimauksen
+  * 
+  * OMAT kommentit: Ensin suodatetaan datasta ne rastileimaukset, joissa koodina on "LAHTO". Sitten näistä etsitään
+  * myöhin lähtö silmukalla. Sitten suodatetaan datasta ne rastileimaukset, joissa koodina on "MAALI". Näistä etsitään
+  * aikaisin saapuminen, ja lisäksi varmistetaan että saapuminen oli varmasti vasta viimeisen lähdön jälkeen. Lähdön
+  * ja maaliin saapumisen leimauksien ajankohdat vähennetään toisistaan, ja lopputulos muokataan millisekunneista
+  * hh:mm:ss muotoon.
+  * 
   * @param {Object} joukkue
   * @return {Object} joukkue
+  * 
+  * @var {function} vertaaLahtoon - Apufunktio, jolla filteröidään lähtörastin leimat
+  * @var {function} vertaaMaaliin - Apufunktio, jolla filteröidään maalirastin leimat
+  * @var {Array} lahtoLeimaukset - Suodatetut leimaukset, jossa koodi on LAHTO
+  * @var {Array} maaliLeimaukset - Suodatetut leimaukset, jossa koodi on MAALI
+  * @var {Date} vikaLahto - Muuttuja, johon tallennetaan tähän mennessä viimeisimmän lähdön aika
+  * @var {Date} ekamaali - Muuttuja, johon tallennetaan tähän mennessä ensimmäisen maalin aika, joka tulee viimeisen lähdön jälkeen
+  * @var {Boolean} loytyikoValidiaLeimaa - Apumuuttuja, jolla varmistetaan että ainakin yksi maalin rastitus oli viimeisen lähdön
+  * jälkeen
+  * @var {Number} joukkueenAika - Erotus ensimmäisen maalin ja viimeisen lähdön ajoista, millisekunneissa
+  * @var {function} millisekuntitTunneiksi - Funktio, jolla millisekunnit esitetään muodossa: hh:mm:ss
   */
 function laskeAika(joukkue) {
-  function aikaJarjestysFunktio(a,b) {
-    return Date.parse(a.aika) > Date.parse(b.aika);
-  }
-  
   function vertaaLahtoon(value) {
     if (value.rasti === undefined) {return false;}
     if (value.rasti.koodi == "LAHTO") {return true;}
@@ -395,10 +409,6 @@ function laskeAika(joukkue) {
     if (vikaLahto < Date.parse(lahtoLeimaukset[indeksi].aika)) {vikaLahto = Date.parse(lahtoLeimaukset[indeksi].aika);}
     indeksi++;
   }
-
-  //let jarjestetytLahdot = lahtoLeimaukset.filter(aikaJarjestysFunktio);
-  //if (jarjestetytLahdot.length-1 < 1) {return joukkue;}
-  //let vikaLahto = jarjestetytLahdot[jarjestetytLahdot.length-1];
 
   let maaliLeimaukset = joukkue.rastileimaukset.filter(vertaaMaaliin);
   if (maaliLeimaukset.length < 1) {return joukkue;}
@@ -432,7 +442,7 @@ function laskeAika(joukkue) {
     minuutit = (minuutit < 10) ? "0" + minuutit : minuutit;
     sekuntit = (sekuntit < 10) ? "0" + sekuntit : sekuntit;
 
-    return tunnit + ":" + minuutit + ":" + sekuntit
+    return tunnit + ":" + minuutit + ":" + sekuntit;
   }
 
   joukkue.aika = millisekuntitTunneiksi(joukkueenAika);
@@ -471,7 +481,29 @@ function laskeAika(joukkue) {
   * @return {Array} palauttaa järjestetyn ja täydennetyn _kopion_ data.joukkueet-taulukosta
   */
 function jarjestaJoukkueet(data, mainsort="nimi", sortorder=[] ) {
-  return data.joukkueet;
+  let kopioJoukkueet = Array.from(data.joukkueet);
+
+  // Valitaan mainsortin mukaan, mitä joukkueen attribuuttia käytetään järjestysparametrina.
+  function nimicompare(a, b, sortParam=mainsort) {
+    if (sortParam=="sarja") {
+      let tulos = a[sortParam]["nimi"].localeCompare(b[sortParam]["nimi"], 'fi', {sensitivity: 'base'});
+      if ( tulos) {
+        return tulos;
+      }
+      return -1;
+    }
+    // TODO: Tähän osaan funktiota ei koskaan päästä, pitää selvittää mikä saa mainsortin arvon muuttumaan muuksi
+    // Kuin "sarja":ksi. Näköjään mainsortin voi kuitenkin muuttaa juuri funktiokutsun alussa, ja silloin tämä
+    // apufunktio toimii
+    let tulosKaksi = a[sortParam].localeCompare(b[sortParam], 'fi', {sensitivity: 'base'});
+    if ( tulosKaksi) {
+      return tulosKaksi;
+    }
+  }
+
+  kopioJoukkueet.sort(nimicompare);
+  console.log("jarjestaJoukkueet", kopioJoukkueet);
+  return kopioJoukkueet;
 }
 
 /**
