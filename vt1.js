@@ -14,11 +14,12 @@
   * Alkuperäistä rakennetta ei saa muuttaa tai korvata vaan järjestäminen tehdään alkup. taulukon kopiolle.
   * Järjestetty lista leimaustavoista näkyy sivulla olevalla lomakkeella
   * @param {Array} leimaustavat-taulukko, jonka kopio järjestetään
-  * @param {Array} lt-kopio alkuperäisestä leimaustavat - taulukosta
+  * @var {Array} lt-kopio alkuperäisestä leimaustavat - taulukosta
   * @return {Array} palauttaa järjestetyn _kopion_ leimaustavat-taulukosta
 */
 function jarjestaLeimaustavat(leimaustavat) {
   let lt = Array.from(leimaustavat);
+  // TODO: whitespace check
   lt.sort(Intl.Collator('fi', {sensitivity: 'base'}).compare);
   console.log("jarjestaLeimaustavat", leimaustavat);
   return lt; // tässä pitää palauttaa järjestetty kopio eikä alkuperäistä
@@ -101,6 +102,7 @@ function lisaaSarja(sarjat, nimi, kesto, alkuaika, loppuaika) {
       suurinId = sarja.id;
     }
     }
+    // TODO: Tämä kelpuuttaa vielä syötteitä kuten "1a", antaa tulokseksi 1. pitäisikö kaikki kirjaimet syötteestä kieltää?
     if (!Number.isInteger(parseInt(kesto)) || kesto <= 0) {
       return false;
     }
@@ -185,6 +187,8 @@ function jarjestaRastit(rastit) {
   let idsuodatettavat = [];
   let indeksi = 0;
 
+  // TODO: for:in sijasta while silmukka, missä ehtona indeksi<rastit.length-1
+  // TODO: ehkä ei let-lausetta silmukan sisään?
   for (let rasti in rastit) {
 
     let suodatettava = {
@@ -193,6 +197,7 @@ function jarjestaRastit(rastit) {
       "lat": Object.values(rastit)[indeksi].lat,
       "lon": Object.values(rastit)[indeksi].lon,
     };
+    // 
     idsuodatettavat[indeksi] = suodatettava;
     indeksi++;
   }
@@ -313,6 +318,7 @@ function lisaaJoukkue(data, nimi, leimaustavat, sarja, jasenet) {
 
   // Kaksi sisäkkäistä silmukkaa, joilla verrataan jokaisen jäsenen nimeä kaikkiin jäsenet - taulukossa jälkeen tuleviin nimiin.
   // Edellä oleviin nimiin ei tarvitse vertaa koska aikaisemmat iteraatiot jo hoitivat sen
+  // firstIndex ja lastIndex of vertailut, jos nämä ei ole samat niin duplikaatteja löytyi. mahdollinen tehostus?
   if (jasenet.length < 2) { return data;}
   let indeksi = 0;
   let indeksij = 0;
@@ -327,6 +333,7 @@ function lisaaJoukkue(data, nimi, leimaustavat, sarja, jasenet) {
 
   // Katsotaan, että sarjan ID löytyy datasta, muuten palautetaan alkuperäinen data. Kun täsmäävä sarjan id löydetään, tallennetaan
   // se jotta se voidaan täyttää uuden joukkueen sarjaksi
+  // TODO: väliaikainen taulukko, missä kaikki data.sarjat id:et, sitten exists - funktio että löytyykö id, säästyy silmukoimiselta.
   let onkoIdOlemassa = false;
   let lisattavaSarja = {};
   for (let vertausSarja of data.sarjat) {
@@ -401,6 +408,7 @@ function laskeAika(joukkue) {
 
   // TODO: Tässä luultavasti sort-funktio pilaa alkuperäisenkin datan, ja johtaa ikuiseen silmukkaan suorituksen aikana.
   // tee tilalle funktio joka etsii manuaalisesti viimeisen lähdön ja ensimmäisen maalin
+  // TODO: exists - funktiolla voisi katsoa että sekä maaleja että lähtöjä on olemassa
   let lahtoLeimaukset = joukkue.rastileimaukset.filter(vertaaLahtoon);
   if (lahtoLeimaukset.length < 1) {return joukkue;}
   let vikaLahto = new Date(Date.parse('01 Jan 1970 00:00:00 GMT'));
@@ -433,6 +441,8 @@ function laskeAika(joukkue) {
   //if (!loytyikoValidiaLeimaa) {return joukkue;}
 
   let joukkueenAika = Math.abs(ekamaali - vikaLahto);
+
+  // Tällä funktiolla muutetaan millisekunnit helpommin luettavaan esitysmuotoon: hh:mm:ss. Sekunnit, minuutit ja tunnit saadaan kaikki modulo-operaatiolla.
   function millisekuntitTunneiksi(kesto) {
     let sekuntit = Math.floor(kesto / 1000) % 60;
     let minuutit = Math.floor(kesto / (1000*60) % 60);
@@ -484,6 +494,7 @@ function jarjestaJoukkueet(data, mainsort="nimi", sortorder=[] ) {
   let kopioJoukkueet = Array.from(data.joukkueet);
 
   // Valitaan mainsortin mukaan, mitä joukkueen attribuuttia käytetään järjestysparametrina.
+  // TODO: joukkeiden sisällä jäsenien ja leimaustapojen järjestäminen
   function nimicompare(a, b, sortParam=mainsort) {
     if (sortParam=="sarja") {
       let tulos = a[sortParam]["nimi"].localeCompare(b[sortParam]["nimi"], 'fi', {sensitivity: 'base'});
@@ -492,16 +503,45 @@ function jarjestaJoukkueet(data, mainsort="nimi", sortorder=[] ) {
       }
       return -1;
     }
-    // TODO: Tähän osaan funktiota ei koskaan päästä, pitää selvittää mikä saa mainsortin arvon muuttumaan muuksi
-    // Kuin "sarja":ksi. Näköjään mainsortin voi kuitenkin muuttaa juuri funktiokutsun alussa, ja silloin tämä
-    // apufunktio toimii
+    if (sortParam=="matka" || sortParam=="pisteet") {
+      return a[sortParam]-b[sortParam];
+    }
     let tulosKaksi = a[sortParam].localeCompare(b[sortParam], 'fi', {sensitivity: 'base'});
     if ( tulosKaksi) {
       return tulosKaksi;
     }
   }
 
+  function numeroCompare(a, b) {
+    let tulos = data.leimaustavat[a].localeCompare(data.leimaustavat[b].localeCompare, 'fi', {sensitivity: 'base'});
+    if (tulos) {
+      return tulos;
+    }
+    return -1;
+  }
+
+  function toinenCompare(a, b) {
+  let tulos = a.localeCompare(b, 'fi', {sensitivity: 'base'});
+    if ( tulos) {
+      return tulos;
+    }
+    return -1;
+  }
+
+  for (let i=0; i< data.joukkueet.length; i++) {
+    kopioJoukkueet[i].leimaustapa = Array.from(data.joukkueet[i].leimaustapa).sort(numeroCompare);
+  }
+
+  for (let i=0; i< data.joukkueet.length; i++) {
+    kopioJoukkueet[i].jasenet = Array.from(data.joukkueet[i].jasenet).sort(toinenCompare);
+  }
+
   kopioJoukkueet.sort(nimicompare);
+  
+  //joukkueet - objektilla ei ole leimaustapa -attribuuttia, vaan yksittäisellä joukkoeella on leimaustapa- attribuutti!
+  
+  //kopioJoukkueet.leimaustapa = Array.from(data.joukkueet.leimaustapa).sort(toinenCompare);
+  //kopioJoukkueet.jasenet.sort(toinenCompare);
   console.log("jarjestaJoukkueet", kopioJoukkueet);
   return kopioJoukkueet;
 }

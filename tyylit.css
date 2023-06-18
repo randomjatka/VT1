@@ -9,6 +9,8 @@ caption {
 }
 
 table {
+    max-width:50%;
+    
     display: inline;
     float: left;
     overflow: auto;
@@ -23,16 +25,8 @@ table {
     padding-left: 2em;
 }
 
-fieldset {
-    border: none;
-}
-
-fieldset>label {
-    display:block;
-}
-
 #vt1>div>div:nth-child(2) {
-    display: inline;
+    display: grid;
     float: left;
     overflow: auto;
     
@@ -54,7 +48,6 @@ fieldset>label {
 div>form:nth-child(1) {
     display: table-footer-group;
 }
-
 div>form:nth-child(2) {
     display: table-header-group;
 }
@@ -72,11 +65,121 @@ h2, h3 {
     margin-left: 1em;
 }
 
-td:nth-child(4)>ul>li:last-child {
-    color: red;
-    list-style-type: none;
-}
-
 tr>th:first-child {
     text-align: left;
+}
+
+tr>th:nth-child(3) {
+    
+    text-align: left;
+}
+
+div:last-child>ul:last-child>li {
+ align-items: self-end; /* tasaa loppuun */
+ justify-content: space-evenly;
+}
+
+div:last-child>ul:last-child>li>span {
+    float: right;
+    padding-right: 50%;
+}
+
+div:last-child>ul:last-child>li>strong {
+    float: left; 
+}
+
+label > input[type="checkbox"]{
+    align-self: flex-right;
+}
+
+tbody>tr>td:nth-child(3)>ul {
+    margin: 0;
+    padding: 0;
+    padding-left: 15px;
+}
+
+tbody>tr>td:nth-child(4)>ul {
+    display: grid;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    padding-left: 15px;
+    width:fit-content;
+}
+
+tbody>tr>td:nth-child(4)>ul>li {
+    grid-row: 1;
+}
+
+td:nth-child(4)>ul>li:last-child {
+    color: red;
+    grid-row: 2;
+}
+
+tbody>tr>td {
+    margin: 0;
+    padding: 0;
+}
+
+tbody>tr>th {
+    margin: 0;
+    padding: 0;
+}
+
+fieldset {
+    border: none;
+}
+
+form:nth-child(2)>fieldset>label {
+    display:block;
+}
+
+label {
+   padding-top: 2px;
+   margin-bottom: 1px;
+}
+label>input {
+   padding: 0;
+   margin: 0;
+   float: right;
+   padding-right: 30%;
+}
+
+div>form:nth-child(1)>fieldset {
+   display: grid;
+}
+
+fieldset>label {
+    grid-row: 1;
+}
+
+fieldset:nth-child(1)>fieldset:nth-child(3) {
+  grid-row: 2;
+  grid-column: 2;
+}
+
+fieldset:nth-child(1)>fieldset:nth-child(4) {
+  grid-row: 2;
+  grid-column: 1;
+  
+}
+
+fieldset:nth-child(1)>fieldset:nth-child(5) {
+  grid-row: 3;
+  grid-column: 1;
+  padding: 1px;
+}
+
+fieldset:nth-child(1)>fieldset:nth-child(3)>label {
+    padding: 1px;
+    display: flex;
+}
+
+fieldset:nth-child(1)>fieldset:nth-child(4)>label {
+    padding: 1px;
+    display: flex;
+}
+
+fieldset>button {
+    grid-row: 4;
 }
