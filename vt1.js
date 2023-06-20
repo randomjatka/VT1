@@ -21,7 +21,7 @@ function jarjestaLeimaustavat(leimaustavat) {
   let lt = Array.from(leimaustavat);
   // TODO: whitespace check
   lt.sort(Intl.Collator('fi', {sensitivity: 'base'}).compare);
-  console.log("jarjestaLeimaustavat", leimaustavat);
+  console.log("jarjestaLeimaustavat", lt);
   return lt; // tässä pitää palauttaa järjestetty kopio eikä alkuperäistä
 }
 
@@ -47,7 +47,7 @@ function jarjestaSarjat(sarjat) {
     }
   }
   snimet.sort(nimicompare);
-  console.log("jarjestaSarjat", sarjat);
+  console.log("jarjestaSarjat", snimet);
   return snimet; // tässä pitää palauttaa järjestetty kopio eikä alkuperäistä
 }
 
@@ -485,16 +485,30 @@ function laskeAika(joukkue) {
   *	 {"key": "aika", "order": 1, "numeric": false},
   *	 {"key": "pisteet", "order": -1, "numeric": true}
   *	]
+  *
+  * Omat Kommentit:
+  * Ensin otetaan järjestämättömät joukkueet ja järjestetään apufunktioilla niiden jäsenet ja leimaustavat sisäisesti oikeiksi.
+  * Tämä tehdään silmukoilla, jotta tietorakenteesta saa aina joukkue kerrallaan sisäiset datat järjestettyä.
+  * Sitten otetaan koko joukkueet-data, ja järjestetään se mainsortin antaman kriteerin mukaan. Apufunktio pystyy
+  * erottamaan sarjan, matkan ja pisteiden mukaan, ja loput kriteerit menevät oletustapauksen mukaan sillä kaikkien niiden
+  * attribuutit löytyvät joukkueen ensimmäiseltä tasolta.
+  * 
   * @param {Object} data - tietorakenne, jonka data.joukkueet-taulukko järjestetään 
   * @param {String} mainsort - ensimmäinen (ainoa) järjestysehto, joka voi olla nimi, sarja, matka, aika tai pisteet  TASO 3
   * @param {Array} sortorder - mahdollinen useampi järjestysehto TASO 5
   * @return {Array} palauttaa järjestetyn ja täydennetyn _kopion_ data.joukkueet-taulukosta
+  * 
+  * @var {Object} kopioJoukkueet - kopio alkuperäisestä joukkueet datasta, järjestystä varten
+  * @var {Function} nimicompare - Apufunktio, jolla päätetään, minkä attribuutin mukaan joukkueet järjestetään
+  * @var {Function} numeroCompare - Apufunktio, jolla järjestetään joukkueiden leimaustavat
+  * @var {Function} toinenCompare - Apufunktio, jolla järjestetään joukkueiden jäsenet
   */
 function jarjestaJoukkueet(data, mainsort="nimi", sortorder=[] ) {
   let kopioJoukkueet = Array.from(data.joukkueet);
 
-  // Valitaan mainsortin mukaan, mitä joukkueen attribuuttia käytetään järjestysparametrina.
-  // TODO: joukkeiden sisällä jäsenien ja leimaustapojen järjestäminen
+  // Tällä funktiolla suoritetaan mainsortin kriteerin mukainen järjestys joukkeille. Funktio ottaa huomioon, onko järjestysehto
+  // sarja, jolloin pitää mennä yksi taso syvemmälle järjestysmerkkijonoa etsiessä. Jos järjestysehtona on numero, niin
+  // niiden erotus lasketaan järjestyksen määrittämiseksi. Muuten järjestetään joukkueet normaalisti.
   function nimicompare(a, b, sortParam=mainsort) {
     if (sortParam=="sarja") {
       let tulos = a[sortParam]["nimi"].localeCompare(b[sortParam]["nimi"], 'fi', {sensitivity: 'base'});
@@ -512,14 +526,21 @@ function jarjestaJoukkueet(data, mainsort="nimi", sortorder=[] ) {
     }
   }
 
+
+  // Tällä funktiolla järjestetään joukkueiden leimaustavat, etsimällä niiden id:eitten perusteella täsmäävät merkkijonot
+  // alkuperäisestä datasta.
   function numeroCompare(a, b) {
-    let tulos = data.leimaustavat[a].localeCompare(data.leimaustavat[b].localeCompare, 'fi', {sensitivity: 'base'});
+    let tulos = data.leimaustavat[a].localeCompare(data.leimaustavat[b], 'fi', {sensitivity: 'base'});
     if (tulos) {
       return tulos;
+    }
+    if (tulos == 0) {
+      return 0;
     }
     return -1;
   }
 
+  // Tällä funktiolla järjestetetään joukkueiden jäsenet
   function toinenCompare(a, b) {
   let tulos = a.localeCompare(b, 'fi', {sensitivity: 'base'});
     if ( tulos) {
@@ -538,10 +559,6 @@ function jarjestaJoukkueet(data, mainsort="nimi", sortorder=[] ) {
 
   kopioJoukkueet.sort(nimicompare);
   
-  //joukkueet - objektilla ei ole leimaustapa -attribuuttia, vaan yksittäisellä joukkoeella on leimaustapa- attribuutti!
-  
-  //kopioJoukkueet.leimaustapa = Array.from(data.joukkueet.leimaustapa).sort(toinenCompare);
-  //kopioJoukkueet.jasenet.sort(toinenCompare);
   console.log("jarjestaJoukkueet", kopioJoukkueet);
   return kopioJoukkueet;
 }

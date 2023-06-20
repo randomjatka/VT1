@@ -81,7 +81,7 @@ div:last-child>ul:last-child>li {
 
 div:last-child>ul:last-child>li>span {
     float: right;
-    padding-right: 50%;
+    padding-right: 40%;
 }
 
 div:last-child>ul:last-child>li>strong {
@@ -90,6 +90,8 @@ div:last-child>ul:last-child>li>strong {
 
 label > input[type="checkbox"]{
     align-self: flex-right;
+    /*! float: right; */
+    /*! padding-left: 25%; */
 }
 
 tbody>tr>td:nth-child(3)>ul {
@@ -103,7 +105,7 @@ tbody>tr>td:nth-child(4)>ul {
     list-style-type: none;
     margin: 0;
     padding: 0;
-    padding-left: 15px;
+    /*! padding-left: 15px; */
     width:fit-content;
 }
 
@@ -132,6 +134,7 @@ fieldset {
 
 form:nth-child(2)>fieldset>label {
     display:block;
+    font-weight: bold;
 }
 
 label {
@@ -141,43 +144,120 @@ label {
 label>input {
    padding: 0;
    margin: 0;
-   float: right;
-   padding-right: 30%;
+   /*! float: right; */
+   /*! padding-right: 0; */
+   /*! padding-left: 30%; */
+   /*! margin-left: 60%; */
 }
 
 div>form:nth-child(1)>fieldset {
    display: grid;
 }
 
-fieldset>label {
-    grid-row: 1;
+form:first-child>fieldset>label {
+    grid-column: span 3;
+    /*! padding-left: 25%; */
+    font-weight: bold;
+}
+form:first-child>fieldset>label>input {
+    padding-left: 30%;
+}
+
+form>fieldset>label {
+    padding: 5px;
+}
+
+form>fieldset>label>input {
+    float: right;
+    padding-right: 30%;
+    /*! padding-left: 25%; */
 }
 
 fieldset:nth-child(1)>fieldset:nth-child(3) {
   grid-row: 2;
   grid-column: 2;
+  /*! width: 200px; */
+  padding-left: 150%;
+}
+
+fieldset:nth-child(3)>label>input {
+    margin-left: 50%;
 }
 
 fieldset:nth-child(1)>fieldset:nth-child(4) {
   grid-row: 2;
   grid-column: 1;
-  
+  padding-left: 70%;
+}
+
+fieldset:nth-child(3)>legend {
+    font-weight: bold;
+}
+
+fieldset:nth-child(4)>legend {
+    font-weight: bold;
+}
+
+fieldset:nth-child(5)>legend {
+    font-weight: bold;
 }
 
 fieldset:nth-child(1)>fieldset:nth-child(5) {
   grid-row: 3;
-  grid-column: 1;
-  padding: 1px;
+  grid-column: span 3;
+  padding: 5px;
+  display: grid;
+}
+
+fieldset:nth-child(5)>label {
+}
+
+fieldset:nth-child(5)>label>input {
+    /*! grid-column: span 2; */
+    /*! width: 100%; */
+    /*! grid-column: span 2; */
+    float: right;
+    padding-left: 30%;
 }
 
 fieldset:nth-child(1)>fieldset:nth-child(3)>label {
-    padding: 1px;
+    padding: 5px;
     display: flex;
+    justify-content: space-between;
+    width: 25%;
 }
 
 fieldset:nth-child(1)>fieldset:nth-child(4)>label {
-    padding: 1px;
+    padding: 5px;
     display: flex;
+    justify-content: space-between;
+}
+
+li>span:nth-child(1) {
+    float: right;
+}
+li>span:nth-child(2) {
+    float: right;
+}
+
+tr>th>span:nth-child(2) {
+    float: right;
+}
+
+tr>th>span:nth-child(3) {
+    float: right;
+}
+
+div>div:nth-child(2)>ul>li {
+    padding: 2%;
+}
+
+div>ul:nth-child(3) {
+}
+
+td>ul>li {
+    vertical-align: bottom;
+    padding-right: 1px;
 }
 
 fieldset>button {
