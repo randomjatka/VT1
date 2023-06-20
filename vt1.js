@@ -13,13 +13,19 @@
   * Leimaustavan nimen alussa tai lopussa olevalle whitespacella ei myöskääm ole merkitystä. "  foo " on siis sama kuin "foo"
   * Alkuperäistä rakennetta ei saa muuttaa tai korvata vaan järjestäminen tehdään alkup. taulukon kopiolle.
   * Järjestetty lista leimaustavoista näkyy sivulla olevalla lomakkeella
+  * 
+  * Omat kommentit: Kopioidaan leimaustapojen taulukko, poistetaan siitä whitespacet, ja sitten järjestetään se case insensitivella tavalla
+  * (sensitivity: base)
   * @param {Array} leimaustavat-taulukko, jonka kopio järjestetään
   * @var {Array} lt-kopio alkuperäisestä leimaustavat - taulukosta
   * @return {Array} palauttaa järjestetyn _kopion_ leimaustavat-taulukosta
 */
 function jarjestaLeimaustavat(leimaustavat) {
   let lt = Array.from(leimaustavat);
-  // TODO: whitespace check
+  //Poistetaan leimaustavoista alussa ja lopussa olevat whitespacet
+  for (let i=0; i<lt.length; i++) {
+    lt[i] = lt[i].trim();
+  }
   lt.sort(Intl.Collator('fi', {sensitivity: 'base'}).compare);
   console.log("jarjestaLeimaustavat", lt);
   return lt; // tässä pitää palauttaa järjestetty kopio eikä alkuperäistä
@@ -31,6 +37,10 @@ function jarjestaLeimaustavat(leimaustavat) {
   * isoilla ja pienillä kirjaimilla ei ole järjestämisessä merkitystä (case insensitive)
   * Alkuperäistä rakennetta ei saa muuttaa tai korvata vaan järjestäminen tehdään alkup. taulukon kopiolle.
   * Järjestetetyt sarjat näkyvät sivulla olevalla lomakkeella
+  * 
+  * Omat kommentit: Kopioidaan sarjojen taulukko, ja järjestetään se itsetehdyllä funktiolla, joka vertaa aina
+  * sarjojen nimiä keskenään.
+  * 
   * @param {Array} taulukko, jonka kopio järjestetään 
   * @var {Array} snimet - kopio alkuperäisestä taulukosta
   * @var {Function} nimicompare - itsetehty vertailufunktio, joka annetaan sort-funktiolle parametrinä
@@ -48,7 +58,7 @@ function jarjestaSarjat(sarjat) {
   }
   snimet.sort(nimicompare);
   console.log("jarjestaSarjat", snimet);
-  return snimet; // tässä pitää palauttaa järjestetty kopio eikä alkuperäistä
+  return snimet;
 }
 
 
@@ -74,7 +84,7 @@ function jarjestaSarjat(sarjat) {
   * 
   * Omat kommentit:
   * Alussa verrataan syötettyä nimea jo sarjat - taulukon olemassa oleviin nimiin, sekä tarkistetaan ettei syötetty ollut vain whitespacea
-  * käyttämällä säännöllisiä lausekkeita. Samalla etsitään sarjan suurinta ID:tä, jota käytetään myöhemmin uuden ID:n muodostamiseen.
+  * käyttämällä trim funktiota. Samalla etsitään sarjan suurinta ID:tä, jota käytetään myöhemmin uuden ID:n muodostamiseen.
   * Sitten tarkistetaan, että syötetty kesto on oikeasti numero ja suurempi kuin nolla. Sitten luodaan uudelle sarjalle uusi
   * ID lisäämällä ykkönen entiseen suurimpaan ID lukuun. Sitten muodostetaan lisättävä sarja ja syötetään siihen kaikki tarvittavat tiedot
   * 
@@ -92,17 +102,17 @@ function jarjestaSarjat(sarjat) {
   */
 function lisaaSarja(sarjat, nimi, kesto, alkuaika, loppuaika) {
   let suurinId = 0;
-  let nimiValilyonnit = nimi.replace(/\s/g, "");
+  //let nimiValilyonnit = nimi.replace(/\s/g, ""); tämä olisi poistanut keskelläkin olevat välilyönnit
+  let nimiValilyonnit = nimi.trim();
   if (nimiValilyonnit == "") {return false;}
   for (let sarja of sarjat) {
-    if ((sarja.nimi.localeCompare(nimiValilyonnit, 'fi', {sensitivity: 'base'}) == 0)) {
+    if ((sarja.nimi.trim().localeCompare(nimiValilyonnit, 'fi', {sensitivity: 'base'}) == 0)) {
       return false;
       }
     if (sarja.id > suurinId) {
       suurinId = sarja.id;
     }
     }
-    // TODO: Tämä kelpuuttaa vielä syötteitä kuten "1a", antaa tulokseksi 1. pitäisikö kaikki kirjaimet syötteestä kieltää?
     if (!Number.isInteger(parseInt(kesto)) || kesto <= 0) {
       return false;
     }
@@ -124,6 +134,9 @@ function lisaaSarja(sarjat, nimi, kesto, alkuaika, loppuaika) {
 /**
   * Taso 1
   * Poistaa joukkueen id:n perusteella data-rakenteesta ja palauttaa muuttuneen datan
+  * 
+  * Omat kommentit: Ensin tarkistetaan, että poistettavaindeksi löytyy datasta käyttämällä itsetehtyä tarkistaId funktiota,
+  * jos ei löydy, palautetaan false. Muussa tapauksessa Poistetaan indeksin määrittämä joukkue splice-funktiolla.
   * @param {Object} joukkueet - taulukko josta joukkue poistetaan
   * @param {String} id - poistettavan joukkueen id
   * @return {Boolean} true, jos poisto onnistui tai false, jos poistettavaa joukkuetta ei löytynyt
@@ -160,8 +173,7 @@ function poistaJoukkue(joukkueet, id) {
   * et ole vielä asettanut rasteille oikeaa id:tä
   * 
   * Omat kommentit:
-  * Ensin luodaan uuden taulukon pohja ja indeksi, jonka avulla seurataan monettako taulukon alkiota käsitellään.
-  * Sitten täytetään silmukalla vanhan rastit - objektin avaimet ja arvot yhteen objektiin, ja luotu objekti
+  * Ensin luodaan uuden taulukon pohja, sitten täytetään silmukalla vanhan rastit - objektin avaimet ja arvot yhteen objektiin, ja luotu objekti
   * lisätään uuteen taulukkoon joka iteraatiolla.
   * 
   * Sitten erotetaan rastien alkioista numerolla alkavat ja kirjaimella alkavat. Erotus tehdään filter-funktiolla,
@@ -176,7 +188,6 @@ function poistaJoukkue(joukkueet, id) {
                                                         "lon": longitude liukulukuna
                                                      }
   * @var {Array} idsuodatettavat - Taulukko, johon pakataan rastit - objektin avaimet ja arvot
-  * @var {Number} indeksi - Apuluku, jota käytetään silmukan suorituksessa viittaamaan taulukon alkioihin
   * @var {Object} suodatettava - Uusi objekti, joka toimii idsuodatettavat - taulukon sisältö alkioina
   * @var {Array} numerollaAlkavat - Rastit, jotka alkavat numerolla
   * @var {Array} kirjaimellaAlkavat - Rastit, jotka alkavat kirjaimella
@@ -185,21 +196,14 @@ function poistaJoukkue(joukkueet, id) {
 function jarjestaRastit(rastit) {
   
   let idsuodatettavat = [];
-  let indeksi = 0;
-
-  // TODO: for:in sijasta while silmukka, missä ehtona indeksi<rastit.length-1
-  // TODO: ehkä ei let-lausetta silmukan sisään?
-  for (let rasti in rastit) {
-
+  for (let i = 0; i<Object.keys(rastit).length; i++) {
     let suodatettava = {
-      "id": Object.keys(rastit)[indeksi],
-      "koodi": Object.values(rastit)[indeksi].koodi,
-      "lat": Object.values(rastit)[indeksi].lat,
-      "lon": Object.values(rastit)[indeksi].lon,
-    };
-    // 
-    idsuodatettavat[indeksi] = suodatettava;
-    indeksi++;
+      "id": Object.keys(rastit)[i],
+      "koodi": Object.values(rastit)[i].koodi,
+      "lat": Object.values(rastit)[i].lat,
+      "lon": Object.values(rastit)[i].lon,
+    }; 
+    idsuodatettavat[i] = suodatettava;
   }
 
   let numerollaAlkavat = idsuodatettavat.filter(function (currentValue, index, array) {
@@ -272,7 +276,6 @@ function jarjestaRastit(rastit) {
   * @return {Object} palauttaa aluperäisen datan
   * 
   * @var {Number} suurinId - Suurin joukkueet -taulukosta löydetty joukkueen ID
-  * @var {Boolean} onkoOlemassa - Apumuuttuja, jolla pidetään muistissa onko leimaustapa olemassa
   * @var {Array} leimausIndeksit - Aputaulukko, jolla pidetään muistissa syötettyjen leimaustapojen indeksit
   * @var {Boolean} onkoIdOlemassa - Apumuuttuja, jolla pidetään muistissa onko sarja olemassa
   * @var {Object} lisattavaSarja - Apumuuttuja, jolla pidetään muistissa se sarja, johon syötetty sarjan ID täsmäsi
@@ -288,10 +291,11 @@ function lisaaJoukkue(data, nimi, leimaustavat, sarja, jasenet) {
   // Lisäksi joukkeita käsitellessä katsotaan läpi niiden ID:t, ja tallennetaan suurin jonka avulla voidaan tehdä uuden joukkueen ID
   if (leimaustavat.length < 1) { return data;}
   let suurinId = 0;
-  let nimiValilyonnit = nimi.replace(/\s/g, "");
+  //let nimiValilyonnit = nimi.replace(/\s/g, "");
+  let nimiValilyonnit =  nimi.trim();
   if (nimiValilyonnit == "") {return data;}
   for (let joukkue of data.joukkueet) {
-    if ((joukkue.nimi.localeCompare(nimiValilyonnit, 'fi', {sensitivity: 'base'}) == 0)) {
+    if ((joukkue.nimi.trim().localeCompare(nimiValilyonnit, 'fi', {sensitivity: 'base'}) == 0)) {
       return data;
       }
     if (joukkue.id > suurinId) {
@@ -299,26 +303,18 @@ function lisaaJoukkue(data, nimi, leimaustavat, sarja, jasenet) {
       }
     }
 
-  // Kaksi sisäkkäistä silmukkaa, joilla tarkistetaan että jokainen leimaustapa löytyy kertaalleen alkuperäisestä datasta.
-  // Kun yksi leimaustapa on löydetty, tallennetaan myös sen indeksi jonka avulla voidaan täyttää uuden joukkuueen "leimaustapa" alkio.
-  // Sitten siirrytään uuteen leimaustapaan ja etsitään sekin alkuperäisestä datasta. Jos jotain leimaustapaa ei löydy, ei lisätä joukkuetta
-  let onkoOlemassa = false;
+  
+  // Tarkistetaan, että jokainen leimausindeksi löytyy datasta, ja tallennetaan myös sen indeksi
+  // jonka avulla voidaan täyttää uuden joukkuueen "leimaustapa" alkio.
   let leimausIndeksit = [];
   for (let leimaustapa of leimaustavat) {
-    for (let vertausleima of data.leimaustavat) {
-      if (leimaustapa == vertausleima) {
-        onkoOlemassa = true;
-        leimausIndeksit.push(data.leimaustavat.indexOf(leimaustapa));
-        break;
-      }
-    }
-    if (!onkoOlemassa) {return data;}
-    onkoOlemassa = false;
+    if (!data.leimaustavat.includes(leimaustapa)) {return false;}
+    leimausIndeksit.push(data.leimaustavat.indexOf(leimaustapa));
   }
 
   // Kaksi sisäkkäistä silmukkaa, joilla verrataan jokaisen jäsenen nimeä kaikkiin jäsenet - taulukossa jälkeen tuleviin nimiin.
   // Edellä oleviin nimiin ei tarvitse vertaa koska aikaisemmat iteraatiot jo hoitivat sen
-  // firstIndex ja lastIndex of vertailut, jos nämä ei ole samat niin duplikaatteja löytyi. mahdollinen tehostus?
+  // TODO: firstIndex ja lastIndex of vertailut, jos nämä ei ole samat niin duplikaatteja löytyi. mahdollinen tehostus?
   if (jasenet.length < 2) { return data;}
   let indeksi = 0;
   let indeksij = 0;
@@ -333,7 +329,7 @@ function lisaaJoukkue(data, nimi, leimaustavat, sarja, jasenet) {
 
   // Katsotaan, että sarjan ID löytyy datasta, muuten palautetaan alkuperäinen data. Kun täsmäävä sarjan id löydetään, tallennetaan
   // se jotta se voidaan täyttää uuden joukkueen sarjaksi
-  // TODO: väliaikainen taulukko, missä kaikki data.sarjat id:et, sitten exists - funktio että löytyykö id, säästyy silmukoimiselta.
+  // TODO: väliaikainen taulukko, missä kaikki data.sarjat id:et, sitten exists - funktio että löytyykö id, mahdollinen tehostus?
   let onkoIdOlemassa = false;
   let lisattavaSarja = {};
   for (let vertausSarja of data.sarjat) {
@@ -390,8 +386,6 @@ function lisaaJoukkue(data, nimi, leimaustavat, sarja, jasenet) {
   * @var {Array} maaliLeimaukset - Suodatetut leimaukset, jossa koodi on MAALI
   * @var {Date} vikaLahto - Muuttuja, johon tallennetaan tähän mennessä viimeisimmän lähdön aika
   * @var {Date} ekamaali - Muuttuja, johon tallennetaan tähän mennessä ensimmäisen maalin aika, joka tulee viimeisen lähdön jälkeen
-  * @var {Boolean} loytyikoValidiaLeimaa - Apumuuttuja, jolla varmistetaan että ainakin yksi maalin rastitus oli viimeisen lähdön
-  * jälkeen
   * @var {Number} joukkueenAika - Erotus ensimmäisen maalin ja viimeisen lähdön ajoista, millisekunneissa
   * @var {function} millisekuntitTunneiksi - Funktio, jolla millisekunnit esitetään muodossa: hh:mm:ss
   */
@@ -406,9 +400,7 @@ function laskeAika(joukkue) {
     if (value.rasti.koodi == "MAALI") {return true;}
   }
 
-  // TODO: Tässä luultavasti sort-funktio pilaa alkuperäisenkin datan, ja johtaa ikuiseen silmukkaan suorituksen aikana.
-  // tee tilalle funktio joka etsii manuaalisesti viimeisen lähdön ja ensimmäisen maalin
-  // TODO: exists - funktiolla voisi katsoa että sekä maaleja että lähtöjä on olemassa
+  // Tässä etsitään leimauksista kaikki rastit, jossa koodina on "LAHTO". Jos suodatettujen pituus on alle 1, ei lasketa aikaa
   let lahtoLeimaukset = joukkue.rastileimaukset.filter(vertaaLahtoon);
   if (lahtoLeimaukset.length < 1) {return joukkue;}
   let vikaLahto = new Date(Date.parse('01 Jan 1970 00:00:00 GMT'));
@@ -418,27 +410,22 @@ function laskeAika(joukkue) {
     indeksi++;
   }
 
+  // Tässä etsitään leimauksista kaikki rastit, jossa koodina on "MAALI". Jos suodatettujen pituus on alle 1, ei lasketa aikaa
   let maaliLeimaukset = joukkue.rastileimaukset.filter(vertaaMaaliin);
   if (maaliLeimaukset.length < 1) {return joukkue;}
   let ekamaali = new Date(Date.parse(maaliLeimaukset[0].aika));
 
 
-  // TODO: katso että tarviiko erikseen tarkistaa, onko jokin maali ennen vikaalähtöä. luultavasti ei koska 
-  // jos ekamaali olisi ennen vikaalähtöä, niin laskutoimitus olisi negatiivinen
-  let loytyikoValidiaLeimaa = false;
-
+  // Tässä etsitään ensimmäinen maali, joka on kuitenkin vasta viimeisen lähdön jälkeen
   let indeksij = 0;
   while (indeksij < maaliLeimaukset.length) {
     if (ekamaali > Date.parse(maaliLeimaukset[indeksij].aika)) {
       if (Date.parse(vikaLahto) < Date.parse(maaliLeimaukset[indeksij].aika)) {
         ekamaali = Date.parse(maaliLeimaukset[indeksij].aika);
-        loytyikoValidiaLeimaa = true;
         }
       }
     indeksij++;
   }
-
-  //if (!loytyikoValidiaLeimaa) {return joukkue;}
 
   let joukkueenAika = Math.abs(ekamaali - vikaLahto);
 
